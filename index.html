@@ -1,0 +1,319 @@
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>  
+  <title>API Project</title>  
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+  
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: #f0f2f5;
+      color: #333;
+    }
+  
+    header {
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: white;
+      padding: 20px 10px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  
+    nav {
+      background-color: #fff;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 10px 0;
+    }
+  
+    nav button {
+      background-color: #2575fc;
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+  
+    nav button:hover {
+      background-color: #1e63d1;
+    }
+  
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 30px;
+      gap: 20px;
+      justify-content: center;
+    }
+  
+    .posts,
+    .user-info {
+      flex: 1;
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      min-height: 400px;
+      max-width: 600px;
+    }
+  
+    .card {
+      background-color: #f9fafe;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      border-left: 5px solid #6a11cb;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+  
+    .card:hover {
+      transform: translateY(-5px);
+      background-color: #eef1f9;
+    }
+  
+    .form-container {
+      width: 350px;
+      margin: 60px auto;
+      background: white;
+      padding: 30px 25px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+  
+    .form-container h2 {
+      text-align: center;
+      color: #6a11cb;
+      margin-bottom: 20px;
+    }
+  
+    .form-container input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+  
+    .form-container button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      font-size: 15px;
+      margin-top: 10px;
+    }
+  
+    .form-container button:hover {
+      background: linear-gradient(to right, #5a0ec1, #1d61c6);
+    }
+  
+    .hidden {
+      display: none;
+    }
+  
+    #authError {
+      color: red;
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style> 
+</head>  
+<body>  <!-- Login / Register Page -->  <div id="authPage" class="form-container">  
+  <h2>Register / Login</h2>  
+  <input type="text" id="regUsername" placeholder="Username (3+ chars)" />  
+  <input type="email" id="regEmail" placeholder="Email" />  
+  <input type="password" id="regPassword" placeholder="Password (6+ chars)" />  
+  <button onclick="register()">Register</button>  
+  <hr>  
+  <input type="email" id="loginEmail" placeholder="Email" />  
+  <input type="password" id="loginPassword" placeholder="Password" />  
+  <button onclick="login()">Login</button>  
+  <p id="authError" style="color:red;"></p>  
+</div>  <!-- Main App -->  <div id="app" class="hidden">  
+  <header>  
+    <h1>Welcome to the API App</h1>  
+  </header>  
+  <nav>  
+    <button onclick="showPosts()">Posts</button>  
+    <button onclick="showUsers()">Users</button>  
+    <button onclick="logout()">Logout</button>  
+  </nav>  
+  <div class="container">  
+    <div class="posts" id="postsContainer">  
+      <h2>Posts</h2>  
+    </div>  
+    <div class="user-info" id="userContainer">  
+      <h2>User Info</h2>  
+      <p>Select a Post or User to see details here.</p>  
+    </div>  
+  </div>  
+</div>  <script>  
+  let usersData = [];  
+  
+  function setCookie(name, value, days = 1) {  
+    const expires = new Date(Date.now() + days * 86400000).toUTCString();  
+    document.cookie = `${name}=${value}; expires=${expires}; path=/`;  
+  }  
+  
+  function getCookie(name) {  
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));  
+    return match ? match[2] : null;  
+  }  
+  
+  function deleteCookie(name) {  
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;  
+  }  
+  
+  function register() {  
+    const username = document.getElementById("regUsername").value.trim();  
+    const email = document.getElementById("regEmail").value.trim();  
+    const password = document.getElementById("regPassword").value.trim();  
+  
+    const nameRegex = /^[a-zA-Z0-9]{3,}$/;  
+    const emailRegex = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;  
+    const passRegex = /^.{6,}$/;  
+  
+    if (!nameRegex.test(username) || !emailRegex.test(email) || !passRegex.test(password)) {  
+      document.getElementById("authError").innerText = "Invalid input!";  
+      return;  
+    }  
+  
+    const users = JSON.parse(localStorage.getItem("users")) || [];  
+    if (users.find(u => u.email === email)) {  
+      document.getElementById("authError").innerText = "Email already registered!";  
+      return;  
+    }  
+  
+    const newUser = {  
+      id: users.length + 11,  
+      name: username,  
+      email,  
+      password,  
+      phone: "N/A",  
+      website: "N/A",  
+      company: { name: "N/A" },  
+      address: { city: "N/A" }  
+    };  
+  
+    users.push(newUser);  
+    localStorage.setItem("users", JSON.stringify(users));  
+    document.getElementById("authError").innerText = "Registration successful!";  
+  }  
+  
+  async function login() {  
+    const email = document.getElementById("loginEmail").value.trim();  
+    const password = document.getElementById("loginPassword").value.trim();  
+  
+    const localUsers = JSON.parse(localStorage.getItem("users")) || [];  
+    const apiUsers = await fetch("https://jsonplaceholder.typicode.com/users").then(res => res.json());  
+  
+    const foundLocal = localUsers.find(u => u.email === email && u.password === password);  
+    const foundApi = apiUsers.find(u => u.email === email && u.username === password);  
+  
+    if (foundLocal || foundApi) {  
+      setCookie("loggedInEmail", email);  
+      document.getElementById("authPage").classList.add("hidden");  
+      document.getElementById("app").classList.remove("hidden");  
+      usersData = [...apiUsers, ...localUsers];  
+      showPosts();  
+    } else {  
+      document.getElementById("authError").innerText = "Invalid credentials!";  
+    }  
+  }  
+  
+  function logout() {  
+    deleteCookie("loggedInEmail");  
+    location.reload();  
+  }  
+  
+  async function showPosts(userId = null) {  
+    const res = await fetch("https://jsonplaceholder.typicode.com/posts" + (userId ? `?userId=${userId}` : ""));  
+    const posts = await res.json();  
+    const postsContainer = document.getElementById("postsContainer");  
+    postsContainer.innerHTML = "<h2>Posts</h2>";  
+  
+    posts.forEach(post => {  
+      const card = document.createElement("div");  
+      card.className = "card";  
+      card.innerHTML = `<strong>${post.title}</strong><p>${post.body}</p>`;  
+      card.onclick = () => {  
+        showUser(post.userId);  
+        showPosts(post.userId);  
+      };  
+      postsContainer.appendChild(card);  
+    });  
+  }  
+  
+  async function showUsers() {  
+    const res = await fetch("https://jsonplaceholder.typicode.com/users");  
+    const apiUsers = await res.json();  
+    const localUsers = JSON.parse(localStorage.getItem("users")) || [];  
+    usersData = [...apiUsers, ...localUsers];  
+  
+    const postsContainer = document.getElementById("postsContainer");  
+    postsContainer.innerHTML = "<h2>Users</h2>";  
+  
+    usersData.forEach(user => {  
+      const card = document.createElement("div");  
+      card.className = "card";  
+      card.innerHTML = `<strong>${user.name}</strong><p>${user.email}</p>`;  
+      card.onclick = () => {  
+        showUser(user.id);  
+        showPosts(user.id);  
+      };  
+      postsContainer.appendChild(card);  
+    });  
+  }  
+  
+  function showUser(userId) {  
+    const user = usersData.find(u => u.id === userId);  
+    const userContainer = document.getElementById("userContainer");  
+  
+    if (user) {  
+      userContainer.innerHTML = `  
+        <h2>User Info</h2>  
+        <p><strong>Name:</strong> ${user.name}</p>  
+        <p><strong>Email:</strong> ${user.email}</p>  
+        <p><strong>Phone:</strong> ${user.phone}</p>  
+        <p><strong>Website:</strong> ${user.website}</p>  
+        <p><strong>Company:</strong> ${user.company?.name || "N/A"}</p>  
+        <p><strong>City:</strong> ${user.address?.city || "N/A"}</p>  
+      `;  
+    } else {  
+      userContainer.innerHTML = "<h2>User Info</h2><p>User not found.</p>";  
+    }  
+  }  
+  
+  window.onload = async () => {  
+    const loggedInEmail = getCookie("loggedInEmail");  
+    if (loggedInEmail) {  
+      document.getElementById("authPage").classList.add("hidden");  
+      document.getElementById("app").classList.remove("hidden");  
+      const res = await fetch("https://jsonplaceholder.typicode.com/users");  
+      const apiUsers = await res.json();  
+      const localUsers = JSON.parse(localStorage.getItem("users")) || [];  
+      usersData = [...apiUsers, ...localUsers];  
+      showPosts();  
+    }  
+  };  
+</script>  </body>  
+</html>  
